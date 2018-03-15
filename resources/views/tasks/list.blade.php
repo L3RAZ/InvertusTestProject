@@ -10,7 +10,7 @@ $task = $firstTask;
         <table class="table table-hover">
         <tbody>
             @while($task != null)
-                <tr class="{{$task->isDone==0?"unfinished":"finished"}}">
+                <tr id="taskRow" class="{{$task->isDone==0?"unfinished":"finished"}}">
                     <td>
                     {{$task->notes}}
                     </td>
@@ -27,10 +27,10 @@ $task = $firstTask;
                     </td>
 
                     <td width="15%">
-                    <form method="POST" action="/tasks/{{$task->id}}">
+                        <form method="POST" action="/tasks/{{$task->id}}">
                                 {{ method_field('DELETE') }}
                                 {{ csrf_field() }}
-                        <button type="submit" class="btn btn-danger">Delete</button>
+                        <button id="deleteBtn" class="btn btn-danger">Delete</button>
                         </form>
                     </td>
                 </tr>
@@ -78,5 +78,11 @@ window.onclick = function(event) {
         modal.style.display = "none";
     }
 }
+
+document.getElementById("deleteBtn").addEventListener("click", function(event){
+    event.preventDefault(),
+    $(this).parent().parent().parent().remove()//AJAX here
+    
+});
 };
 </script>

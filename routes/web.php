@@ -12,14 +12,14 @@
 */
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect('/tasks');
 });
 
 Route::get('/tasks','TaskController@list');
 
 Auth::routes();
 
-Route::get('/home', 'HomeController@index')->name('home');
+Route::get('/home', 'TaskController@list');
 Route::get('/tasks/{id}/{beforeId}','TaskController@relocate');
 Route::post('/tasks','TaskController@create');
 Route::delete('/tasks/{id}','TaskController@destroy');

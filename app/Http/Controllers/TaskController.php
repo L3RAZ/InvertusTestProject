@@ -22,10 +22,13 @@ class TaskController extends Controller
         $lastTask = Task::where('before',null)->first();
         $task = new Task;
         $task->notes = request('notes');
+        if($lastTask != null)
+        {
         $task->after = $lastTask->id;
-        $task->save();
         $lastTask->before = $task->id;
         $lastTask->save();
+        }
+        $task->save();
         return(redirect('/tasks'));
     }
 
@@ -34,25 +37,24 @@ class TaskController extends Controller
         $task = Task::find($id);
         $taskBefore = Task::where('id',$task->after)->first();
         $taskAfter = Task::where('id',$task->before)->first();
-        if($taskBefore == null)
-        {
-            $taskAfter->after=null;
-            $taskAfter->save();
-        }
-        elseif($taskAfter==null)
-        {
-            $taskBefore->before=null;
-            $taskBefore->save();
-        }
-        else
+        if($taskBefore !=null && $taskAfter!=null )
         {
             $taskAfter->after=$taskBefore->id;
             $taskAfter->save();
             $taskBefore->before=$taskAfter->id;
             $taskBefore->save();
         }
+        elseif($taskBefore == null && $taskAfter != null)
+        {
+            $taskAfter->after=null;
+            $taskAfter->save();
+        }
+        elseif($taskAfter==null && $taskBefore != null)
+        {
+            $taskBefore->before=null;
+            $taskBefore->save();
+        }
         $task->delete();
-        return redirect('/tasks');
     }
 
     public function markAsDone($id)
@@ -60,7 +62,6 @@ class TaskController extends Controller
         $task = Task::find($id);
         $task->isDone=1;
         $task->save();
-        return(redirect('/tasks'));
     }
 
     public function relocate($id, $beforeId)
