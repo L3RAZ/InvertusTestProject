@@ -14,3 +14,13 @@
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::get('/tasks','TaskController@list');
+
+Auth::routes();
+
+Route::get('/home', 'HomeController@index')->name('home');
+Route::get('/tasks/{id}/{beforeId}','TaskController@relocate');
+Route::post('/tasks','TaskController@create');
+Route::delete('/tasks/{id}','TaskController@destroy');
+Route::patch('/tasks/{id}','TaskController@markAsDone');
