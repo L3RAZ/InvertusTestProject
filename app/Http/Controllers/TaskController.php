@@ -22,14 +22,15 @@ class TaskController extends Controller
         $lastTask = Task::where('before',null)->first();
         $task = new Task;
         $task->notes = request('notes');
+        $task->save();
         if($lastTask != null)
         {
         $task->after = $lastTask->id;
+        $task->save();
         $lastTask->before = $task->id;
         $lastTask->save();
         }
-        $task->save();
-        return(redirect('/tasks'));
+        return response($task->id, 200);
     }
 
     public function destroy($id)
