@@ -24,3 +24,4 @@ Route::get('/tasks/{id}/{beforeId}','TaskController@relocate');
 Route::post('/tasks','TaskController@create');
 Route::delete('/tasks/{id}','TaskController@destroy');
 Route::patch('/tasks/{id}','TaskController@markAsDone');
+Route::put('/tasks','TaskController@relocate');

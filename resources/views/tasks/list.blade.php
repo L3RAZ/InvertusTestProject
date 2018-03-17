@@ -9,19 +9,22 @@ $task = $firstTask;
         <button class="btn btn-success" id="modal">Create Task</button>
         <hr>
         <table id="tasks" class="table table-hover">
-        <tbody>
+        <tbody id="taskTableBody">
             @while($task != null)
-                <tr id="taskRow" class="{{$task->isDone==0?"unfinished":"finished"}}">
-                    <td>
+                <tr class="{{$task->isDone==0?"unfinished":"finished"}}" data-task-id="{{$task->id}}">
+                    <td width="3%">
+                    <span class="ui-icon ui-icon-arrowthick-2-n-s"></span>
+                    </td>
+                    <td width="72%">
                     {{$task->notes}}
                     </td>
                     <td width="15%">
                         @if($task->isDone==0)
-                        <button id="doneBtn" class="btn btn-success js-done" data-task-id="{{$task->id}}">Mark as done</button>
+                        <button id="doneBtn" class="btn btn-success js-done">Mark as done</button>
                         @endif
                     </td>
-                    <td width="15%">
-                        <button id="deleteBtn" data-task-id="{{$task->id}}" class="btn btn-danger js-delete">Delete</button>
+                    <td width="10%">
+                        <button id="deleteBtn" class="btn btn-danger js-delete">Delete</button>
                     </td>
                 </tr>
             @php
@@ -35,7 +38,7 @@ $task = $firstTask;
 
 <div id="formModal" class="modal">
     <div class="modal-content">
-        <span class="close" float="right">&times;</span>
+        <span id="close" class="close" float="right">&times;</span>
         <h3>Create a new task!</h3>
         <div class="col-md-auto">
             <div class="form-group">
@@ -47,18 +50,27 @@ $task = $firstTask;
     </div> 
 </div>
 @endsection
+
+<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+
+<script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+
 <script>
 window.onload = function(){ 
-
+var token = document.head.querySelector("[name=csrf-token]").content;
 var modal = document.getElementById('formModal');
-var btn = document.getElementById("modal");
-var span = document.getElementsByClassName("close")[0];
-btn.onclick = function() {
+var openModalBtn = document.getElementById("modal");
+var closeModalBtn = document.getElementById("close");
+
+openModalBtn.onclick = function() {
     modal.style.display = "block";
 }
-span.onclick = function() {
+
+closeModalBtn.onclick = function() {
     modal.style.display = "none";
 }
+
 window.onclick = function(event) {
     if (event.target == modal) {
         modal.style.display = "none";
@@ -66,7 +78,6 @@ window.onclick = function(event) {
 }
 
 document.getElementById("createBtn").addEventListener("click", function(){
-    var button = $(this);
     if($('#notes').val()=='')
     {
         alert("Notes input can't be empty.");
@@ -78,16 +89,16 @@ document.getElementById("createBtn").addEventListener("click", function(){
                 method: "POST",
                 data:{
                     notes:$('input#notes').val(),
-                    _token:$('input#token').val()
+                    _token:token
                     },
                 success: function ( taskId ) {
-                    console.log(taskId);
                     var notes = $('#notes').val();
                     $('#tasks tbody').append(
-                        '<tr id="taskRow" class="unfinished">'+
-                        '<td>'+notes+'</td>'+
-                        '<td width="15%"><button id="doneBtn" class="btn btn-success js-done" data-task-id="'+taskId+'">Mark as done</button></td>'+
-                        '<td width="15%"><button id="deleteBtn" data-task-id="'+taskId+'" class="btn btn-danger js-delete">Delete</button></td></tr>'
+                        '<tr id="taskRow" class="unfinished" data-task-id="'+taskId+'">'+
+                        '<td width="3%"><span class="ui-icon ui-icon-arrowthick-2-n-s"></span></td>'+
+                        '<td width="72%">'+notes+'</td>'+
+                        '<td width="15%"><button id="doneBtn" class="btn btn-success js-done" >Mark as done</button></td>'+
+                        '<td width="10%"><button id="deleteBtn" class="btn btn-danger js-delete">Delete</button></td></tr>'
                     );
                     $('#notes').val('');
                 }
@@ -97,36 +108,58 @@ document.getElementById("createBtn").addEventListener("click", function(){
 
     $("#tasks").on("click", ".js-delete", function () {
     var button = $(this);
+    var taskId = button.closest("tr").attr("data-task-id");
     $.ajax({
-                url: "/tasks/"+button.attr("data-task-id"),
+                url: "/tasks/"+taskId,
                 method: "POST",
                 data:{
-                    _token:$('input#token').val(),
+                    _token:token,
                     _method:"DELETE"
                     },
                 success: function () {
-                    button.parent().parent().remove();
+                    button.closest("tr").remove();
                 }
             });
     });
 
     $("#tasks").on("click", ".js-done", function () {
-    var button = $(this);
+    var button = $(this); 
+    var taskId = button.closest("tr").attr("data-task-id");
     $.ajax({
-                url: "/tasks/"+button.attr("data-task-id"),
+                url: "/tasks/"+taskId,
                 method: "POST",
                 data:{
-                    _token:$('input#token').val(),
+                    _token:token,
                     _method:"PATCH"
                     },
                 success: function () {
-                    button.parent().parent().removeClass("unfinished");
-                    button.parent().parent().addClass("finished");
+                    button.closest("tr").removeClass("unfinished");
+                    button.closest("tr").addClass("finished");
                     button.remove();
                 }
             });
     });
 
-
+    $( function() {
+    $( "#taskTableBody" ).disableSelection();
+    $( "#taskTableBody" ).sortable({
+        stop: function(event, ui) {
+            var currentTaskRow = $(ui.item);
+            var taskAfter = currentTaskRow.closest('tr').next('tr');
+            $.ajax({
+                    url: "/tasks",
+                    method: "POST",
+                    data:{
+                    _token:token,
+                    _method:"PUT",
+                    id:currentTaskRow.attr('data-task-id'),
+                    beforeId:taskAfter.attr('data-task-id')
+                    },
+                    success: function () {
+                    }
+                });
+        }
+        });
+    });
 };
 </script>

@@ -65,22 +65,25 @@ class TaskController extends Controller
         $task->save();
     }
 
-    public function relocate($id, $beforeId)
+    public function relocate()
     {
+        $id = request('id');
+        $beforeId = request('beforeId');
+
         $task = Task::findOrFail($id);
         $taskBefore = Task::where('id',$task->after)->first();
         $taskAfter = Task::where('id',$task->before)->first();
+        
         if($beforeId == null) //If task is moved to the back of the list
         {
             $lastTask = Task::where('before',null)->first();
             if($lastTask != $task) //if the task is in the back, doesn't move it
             {
+                $task->after = $lastTask->id;
+                $task->before = null;
+                $task->save();
                 if($taskBefore == null) //If the task is at the front
                 {
-                    $task->after = $lastTask->id;
-                    $task->before = null;
-                    $task->save();
-
                     if($lastTask == $taskAfter) //If there are two tasks
                     {
                         $taskAfter->after = null;
@@ -97,15 +100,13 @@ class TaskController extends Controller
                 }
                 else
                 {
-                    if($taskAfter != null)
-                    {
-                        $lastTask->before = $task->id;
-                        $lastTask->save();
-                        $taskBefore->before = $taskAfter->id;
-                        $taskBefore->save();
-                        $taskAfter->after = $taskBefore->id;
-                        $taskAfter->save();
-                    }
+                    $lastTask->before = $task->id;
+                    $lastTask->save();
+                    $taskBefore->before = $taskAfter->id;
+                    $taskBefore->save();
+                    $taskAfter->after = $taskBefore->id;
+                    $taskAfter->save();
+
                 }
             }
         }
